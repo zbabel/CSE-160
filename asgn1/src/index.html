@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASGN1 Paint Program</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body onload="main()">
+  <h1>ASGN1 Paint Program</h1>
+
+<canvas id="webgl" width="400" height="400">
+    Your browser does not support canvas.
+  </canvas>
+
+  <div class="controls">
+    <div class="row">
+      <button id="clearButton">Clear Canvas</button>
+      <button id="pictureButton">Draw Picture</button>
+    </div>
+
+    <div class="row">
+      <strong>Drawing Mode:</strong>
+      <button id="pointButton">Squares</button>
+      <button id="triButton">Triangles</button>
+      <button id="circleButton">Circles</button>
+    </div>
+
+    <div class="row">
+      <strong>Shape Color:</strong>
+      <label>
+        Red
+        <input type="range" id="redSlide" min="0" max="100" value="100" />
+        <span id="redValue">100</span>
+      </label>
+      <label>
+        Green
+        <input type="range" id="greenSlide" min="0" max="100" value="0" />
+        <span id="greenValue">0</span>
+      </label>
+      <label>
+        Blue
+        <input type="range" id="blueSlide" min="0" max="100" value="0" />
+        <span id="blueValue">0</span>
+      </label>
+    </div>
+
+    <div class="row">
+      <label>
+        <strong>Shape Size:</strong>
+        <input type="range" id="sizeSlide" min="5" max="40" value="12" />
+        <span id="sizeValue">12</span>
+      </label>
+
+      <label>
+        <strong>Circle Segments:</strong>
+        <input type="range" id="segmentSlide" min="3" max="40" value="12" />
+        <span id="segmentValue">12</span>
+      </label>
+    </div>
+
+    <p id="status">Shapes: 0</p>
+  </div>
+
+  <script src="lib/cuon-utils.js"></script>
+  <script src="Point.js"></script>
+  <script src="Triangle.js"></script>
+  <script src="Circle.js"></script>
+  <script src="Picture.js"></script>
+  <script src="asg1.js"></script>
+</body>
+</html>
