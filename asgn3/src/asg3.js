@@ -250,7 +250,7 @@ function initUniformLocations() {
 function loadWorld(){
   texture = gl.createTexture();
   let img = new Image();
-  img.src = "textures/block.jpg";
+  img.src = "../textures/block.jpg";
   img.onload = function(){
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
