@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ASG 3</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #webgl-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+      #webgl {
+        display: block;
+      }
+      #crosshair {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 24px;
+        height: 24px;
+        margin-left: -12px;
+        margin-top: -12px;
+        pointer-events: none;
+      }
+      #crosshair::before,
+      #crosshair::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        background: white;
+      }
+      #crosshair::before {
+        width: 2px;
+        height: 24px;
+        margin-left: -1px;
+        margin-top: -12px;
+        box-shadow: 0 0 0 2px black;
+      }
+      #crosshair::after {
+        width: 24px;
+        height: 2px;
+        margin-left: -12px;
+        margin-top: -1px;
+        box-shadow: 0 0 0 2px black;
+      }
+    </style>
+
+    <!-- Load external libraries -->
+    <script src="lib/cuon-matrix-cse160.js"></script>
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+
+    <!-- Load geometry -->
+    <script src="geometry/geometry.js"></script>
+    <script src="geometry/triangle.js"></script>
+    <script src="geometry/cube.js"></script>
+    <script src="geometry/square.js"></script>
+
+    <!-- Load camera and main scene -->
+    <script src="camera.js"></script>
+    <script src="asg3.js"></script>
+  </head>
+
+  <body onload="main()">
+    <div id="webgl-wrapper">
+      <canvas id="webgl" width="400" height="400">
+        Please use a browser that supports "canvas"
+      </canvas>
+      <div id="crosshair"></div>
+    </div>
+    <div style="font-family: sans-serif; margin-top: 12px;">
+      Controls: W/A/S/D = move, Q/E = rotate, mouse = look left/right, F = add block, R = remove block, click canvas to lock pointer.
+    </div>
+    <div id="fps-display" style="font-family: sans-serif; margin-top: 4px; color: #222;">FPS: --</div>
+  </body>
+</html>
