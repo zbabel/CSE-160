@@ -1,337 +1,413 @@
-// Main entry for the Three.js Alien Island Base
-// Assignment requirements are annotated in comments near where they are implemented.
+// Three.js Assignment - Alien Island Base
+// Following the structured tutorials from three.js.org
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-const container = document.getElementById('app');
+// ============================================
+// 1. CREATE A SIMPLE THREE.JS SCENE
+// ============================================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x001a33);
 
-// Renderer
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+camera.position.set(30, 25, 40);
+
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-container.appendChild(renderer.domElement);
+document.getElementById('app').appendChild(renderer.domElement);
 
-// Scene
-const scene = new THREE.Scene();
-
-// Camera (Requirement 9: Use a PerspectiveCamera)
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-camera.position.set(30, 20, 40);
-
-// Controls (Requirement 10: OrbitControls)
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 4, 0);
-controls.update();
-
-// Resize
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-window.addEventListener('resize', onWindowResize, false);
-onWindowResize();
-
-// Skybox (Requirement 8: textured skybox)
-function makeSkybox() {
-  // Procedural skybox using CanvasTexture for each face
-  const size = 512;
-  const faces = [];
-  for (let i = 0; i < 6; i++) {
-    const canvas = document.createElement('canvas');
-    canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    // gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, size);
-    if (i === 4) { // top
-      grad.addColorStop(0, '#001022'); grad.addColorStop(1, '#003050');
-    } else if (i === 5) { // bottom
-      grad.addColorStop(0, '#002040'); grad.addColorStop(1, '#001018');
-    } else {
-      grad.addColorStop(0, '#003050'); grad.addColorStop(1, '#001018');
+// ============================================
+// 2. ADD TEXTURES - Helper function
+// ============================================
+function createCanvasTexture(color, pattern = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 256, 256);
+  
+  if (pattern) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 256; i += 16) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, 256);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(256, i);
+      ctx.stroke();
     }
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, size, size);
-    // stars
-    for (let s = 0; s < 60; s++) {
-      ctx.fillStyle = 'rgba(200,255,255,' + (Math.random() * 0.8) + ')';
-      ctx.fillRect(Math.random() * size, Math.random() * size, Math.random() * 2, Math.random() * 2);
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    faces.push(new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide }));
   }
-  const skyGeo = new THREE.BoxGeometry(1000, 1000, 1000);
-  const sky = new THREE.Mesh(skyGeo, faces);
-  sky.name = 'skybox';
-  scene.add(sky);
+  
+  return new THREE.CanvasTexture(canvas);
 }
-makeSkybox();
 
-// Lights (Requirement 7: include at least 3 different light types)
-// AmbientLight
-const ambient = new THREE.AmbientLight(0x8899aa, 0.4);
-scene.add(ambient);
+// ============================================
+// 5. ADD EXTRA LIGHT SOURCES (3+ types)
+// ============================================
+// Ambient Light
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
 
-// HemisphereLight
-const hemi = new THREE.HemisphereLight(0x99ddff, 0x222233, 0.3);
-scene.add(hemi);
+// Directional Light (Sun)
+const dirLight = new THREE.DirectionalLight(0xfff0cc, 0.8);
+dirLight.position.set(50, 50, 30);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.left = -100;
+dirLight.shadow.camera.right = 100;
+dirLight.shadow.camera.top = 100;
+dirLight.shadow.camera.bottom = -100;
+scene.add(dirLight);
 
-// DirectionalLight (sun) with shadows
-const dir = new THREE.DirectionalLight(0xfff2cc, 0.9);
-dir.position.set(50, 60, 10);
-dir.castShadow = true;
-dir.shadow.mapSize.set(2048, 2048);
-dir.shadow.camera.left = -100; dir.shadow.camera.right = 100;
-dir.shadow.camera.top = 100; dir.shadow.camera.bottom = -100;
-scene.add(dir);
+// Hemisphere Light
+const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3d2817, 0.4);
+scene.add(hemiLight);
 
-// SpotLight (accent)
-const spot = new THREE.SpotLight(0xffaa88, 0.6, 100, Math.PI / 8, 0.2, 1);
-spot.position.set(-20, 30, -10);
-spot.castShadow = true;
-scene.add(spot);
+// Spot Light
+const spotLight = new THREE.SpotLight(0xff6600, 1.2, 100, Math.PI / 6, 0.5, 2);
+spotLight.position.set(-30, 40, -30);
+spotLight.castShadow = true;
+scene.add(spotLight);
 
-// Ground / Island (Requirement 1: create a 3D scene with island/ground)
-const islandGroup = new THREE.Group();
-scene.add(islandGroup);
+// Point Light
+const pointLight = new THREE.PointLight(0x00ff88, 0.8, 50);
+pointLight.position.set(0, 20, 0);
+pointLight.castShadow = true;
+scene.add(pointLight);
 
-// Create an island using a large cylinder
-const islandCanvas = document.createElement('canvas');
-islandCanvas.width = 512; islandCanvas.height = 512;
-const ictx = islandCanvas.getContext('2d');
-ictx.fillStyle = '#2a4b2a';
-ictx.fillRect(0, 0, 512, 512);
-ictx.fillStyle = '#123322';
-for (let i = 0; i < 2000; i++) {
-  ictx.fillStyle = `rgba(20,${30 + (i % 120)},20,${0.02 + Math.random() * 0.06})`;
-  ictx.fillRect(Math.random() * 512, Math.random() * 512, 1, 1);
+// ============================================
+// 6. ADD A SKYBOX
+// ============================================
+const skyboxTextures = [];
+for (let i = 0; i < 6; i++) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  
+  // Gradient background
+  const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+  gradient.addColorStop(0, '#0d1b2a');
+  gradient.addColorStop(1, '#1b4965');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 512);
+  
+  // Add stars
+  ctx.fillStyle = 'white';
+  for (let j = 0; j < 100; j++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const size = Math.random() * 2;
+    ctx.globalAlpha = Math.random() * 0.8;
+    ctx.fillRect(x, y, size, size);
+  }
+  ctx.globalAlpha = 1;
+  
+  skyboxTextures.push(new THREE.CanvasTexture(canvas));
 }
-const islandTex = new THREE.CanvasTexture(islandCanvas);
-const islandGeo = new THREE.CylinderGeometry(25, 40, 8, 64);
-const islandMat = new THREE.MeshStandardMaterial({ map: islandTex, roughness: 1 });
+
+const skyboxGeometry = new THREE.BoxGeometry(1000, 1000, 1000);
+const skyboxMaterials = skyboxTextures.map(tex => 
+  new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide })
+);
+const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+scene.add(skybox);
+
+// ============================================
+// 7. ADD MORE 3D OBJECTS (20+)
+// ============================================
+
+// Ground/Island
+const islandTex = createCanvasTexture('#2d5016', true);
+const islandGeo = new THREE.CylinderGeometry(30, 40, 8, 64);
+const islandMat = new THREE.MeshStandardMaterial({ map: islandTex, roughness: 0.8 });
 const island = new THREE.Mesh(islandGeo, islandMat);
-island.rotation.x = -Math.PI / 2;
+island.castShadow = true;
 island.receiveShadow = true;
 island.position.y = -4;
-islandGroup.add(island);
+scene.add(island);
 
-// Water ring
-const waterGeo = new THREE.RingGeometry(40, 60, 64);
-const waterMat = new THREE.MeshBasicMaterial({ color: 0x003355, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
-const water = new THREE.Mesh(waterGeo, waterMat);
-water.rotation.x = -Math.PI / 2;
-water.position.y = -4.1;
-islandGroup.add(water);
+// Helper group for primitives
+const primitivesGroup = new THREE.Group();
+scene.add(primitivesGroup);
+let primitiveCount = 0;
 
-// Helper: create a canvas texture with a color and optional stripes
-function makePatternTexture(color, stripe) {
-  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = color; ctx.fillRect(0, 0, 256, 256);
-  if (stripe) {
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    for (let i = 0; i < 20; i++) ctx.fillRect(0, i * 12, 256, 6);
-  }
-  return new THREE.CanvasTexture(c);
+// Helper function to add a primitive with shadow
+function addPrimitive(geometry, material, x, y, z, scale = 1) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x, y, z);
+  mesh.scale.setScalar(scale);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  primitivesGroup.add(mesh);
+  primitiveCount++;
+  return mesh;
 }
 
-// Create many primitives around the island (Requirement 2 & 3 & Scene reqs)
-// We'll add: boxes, spheres, cylinders, cones, toruses -> total 22+ primitives
-const primitives = [];
-// Boxes (6)
-for (let i = 0; i < 6; i++) {
-  const geo = new THREE.BoxGeometry(3, 3, 3);
-  const mat = new THREE.MeshStandardMaterial({ map: makePatternTexture('#8aa', true) });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 30, Math.random() * 4 + 0.5, (Math.random() - 0.5) * 30);
-  m.castShadow = true; m.receiveShadow = true;
-  scene.add(m); primitives.push(m);
-}
-
-// Spheres (5)
+// Boxes (5)
 for (let i = 0; i < 5; i++) {
-  const geo = new THREE.SphereGeometry(1.6, 24, 16);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x66ff99 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 20, 1.6, (Math.random() - 0.5) * 20);
-  m.castShadow = true; m.receiveShadow = true;
-  scene.add(m); primitives.push(m);
+  const boxTex = createCanvasTexture('#8b6f47', true);
+  const boxGeo = new THREE.BoxGeometry(3, 3, 3);
+  const boxMat = new THREE.MeshStandardMaterial({ map: boxTex });
+  addPrimitive(boxGeo, boxMat, 
+    (Math.random() - 0.5) * 30, 
+    Math.random() * 4 + 1.5, 
+    (Math.random() - 0.5) * 30
+  );
+}
+
+// Spheres (4)
+for (let i = 0; i < 4; i++) {
+  const sphereGeo = new THREE.SphereGeometry(2, 32, 32);
+  const sphereMat = new THREE.MeshStandardMaterial({ 
+    color: new THREE.Color().setHSL(Math.random(), 0.8, 0.6),
+    metalness: 0.3,
+    roughness: 0.4
+  });
+  addPrimitive(sphereGeo, sphereMat, 
+    (Math.random() - 0.5) * 25, 
+    2.5, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
 // Cylinders (4)
 for (let i = 0; i < 4; i++) {
-  const geo = new THREE.CylinderGeometry(1, 1, 4, 16);
-  const mat = new THREE.MeshStandardMaterial({ map: makePatternTexture('#886644') });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 22, 2, (Math.random() - 0.5) * 22);
-  m.castShadow = true; m.receiveShadow = true;
-  scene.add(m); primitives.push(m);
+  const cylTex = createCanvasTexture('#cd853f');
+  const cylGeo = new THREE.CylinderGeometry(1.2, 1.2, 4, 16);
+  const cylMat = new THREE.MeshStandardMaterial({ map: cylTex });
+  addPrimitive(cylGeo, cylMat, 
+    (Math.random() - 0.5) * 25, 
+    2, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
 // Cones (4)
 for (let i = 0; i < 4; i++) {
-  const geo = new THREE.ConeGeometry(1.6, 4, 16);
-  const mat = new THREE.MeshStandardMaterial({ color: 0xcc8844 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 20, 2, (Math.random() - 0.5) * 20);
-  m.castShadow = true; m.receiveShadow = true;
-  scene.add(m); primitives.push(m);
+  const coneGeo = new THREE.ConeGeometry(1.5, 4, 16);
+  const coneMat = new THREE.MeshStandardMaterial({ color: 0xff9500 });
+  addPrimitive(coneGeo, coneMat, 
+    (Math.random() - 0.5) * 25, 
+    2.5, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
-// Torus (3) - one of these will be animated (Requirement 5 animated primitive)
-const torusGroup = new THREE.Group();
-scene.add(torusGroup);
+// Toruses (3)
 for (let i = 0; i < 3; i++) {
-  const geo = new THREE.TorusGeometry(2 + i * 0.6, 0.4, 16, 64);
-  const mat = new THREE.MeshStandardMaterial({ color: 0xff66aa, metalness: 0.3, roughness: 0.5 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(6 + i * 2, 6 + i * 0.4, 0);
-  m.castShadow = true; m.receiveShadow = true;
-  torusGroup.add(m); primitives.push(m);
+  const torusGeo = new THREE.TorusGeometry(2 + i * 0.5, 0.5, 16, 64);
+  const torusMat = new THREE.MeshStandardMaterial({ color: 0xff1493 });
+  addPrimitive(torusGeo, torusMat, 
+    5 + i * 3, 
+    5 + i * 1, 
+    5
+  );
 }
 
-// Make sure we have at least 22 primitives (requirement asks 20+)
-// Count included in code comments: boxes(6)+spheres(5)+cylinders(4)+cones(4)+torus(3)=22 primitives
-
-// Buildings / crates (boxes with textures)
-for (let i = 0; i < 5; i++) {
-  const geo = new THREE.BoxGeometry(2.5, 3 + Math.random() * 4, 2.5);
-  const mat = new THREE.MeshStandardMaterial({ map: makePatternTexture('#665533', true) });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 18, (m.geometry.parameters.height / 2) - 1, (Math.random() - 0.5) * 18);
-  m.castShadow = true; m.receiveShadow = true;
-  scene.add(m);
+// Pyramids (made with cone geometry) (3)
+for (let i = 0; i < 3; i++) {
+  const pyramidGeo = new THREE.ConeGeometry(2, 3, 4);
+  const pyramidMat = new THREE.MeshStandardMaterial({ color: 0x4b0082 });
+  addPrimitive(pyramidGeo, pyramidMat, 
+    (Math.random() - 0.5) * 25, 
+    2.5, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
-// Lamps (glowing) - poles with point lights
-for (let i = 0; i < 6; i++) {
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 4), new THREE.MeshStandardMaterial({ color: 0x334455 }));
-  pole.position.set((Math.random() - 0.5) * 30, 2, (Math.random() - 0.5) * 30);
-  pole.castShadow = true; pole.receiveShadow = true; scene.add(pole);
-  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8), new THREE.MeshStandardMaterial({ emissive: 0xffcc88, emissiveIntensity: 1 }));
-  bulb.position.set(pole.position.x, 3.1, pole.position.z); scene.add(bulb);
-  const pLight = new THREE.PointLight(0xffcc88, 0.8, 12, 2);
-  pLight.position.copy(bulb.position); pLight.castShadow = true; scene.add(pLight);
+// Dodecahedrons (2)
+for (let i = 0; i < 2; i++) {
+  const dodecaGeo = new THREE.DodecahedronGeometry(1.5);
+  const dodecaMat = new THREE.MeshStandardMaterial({ color: 0x20b2aa });
+  addPrimitive(dodecaGeo, dodecaMat, 
+    (Math.random() - 0.5) * 25, 
+    2.5, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
-// Rocks (using scaled spheres/cylinders)
-for (let i = 0; i < 8; i++) {
-  const geo = Math.random() > 0.5 ? new THREE.SphereGeometry(1 + Math.random() * 1.2, 12, 10) : new THREE.CylinderGeometry(0.6, 1.2, 1 + Math.random() * 2, 8);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x556655 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set((Math.random() - 0.5) * 28, 0.2, (Math.random() - 0.5) * 28);
-  m.rotation.y = Math.random() * Math.PI;
-  m.scale.setScalar(0.8 + Math.random() * 1.6);
-  m.castShadow = true; m.receiveShadow = true; scene.add(m);
+// Octahedrons (2)
+for (let i = 0; i < 2; i++) {
+  const octaGeo = new THREE.OctahedronGeometry(1.5);
+  const octaMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+  addPrimitive(octaGeo, octaMat, 
+    (Math.random() - 0.5) * 25, 
+    2.5, 
+    (Math.random() - 0.5) * 25
+  );
 }
 
-// Floating objects (animated) - some small orbs orbiting (Requirement: animated floating objects)
-const floating = [];
-for (let i = 0; i < 8; i++) {
-  const geo = new THREE.SphereGeometry(0.4 + Math.random() * 0.6, 12, 8);
-  const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.8, 0.5), emissive: 0x002222, emissiveIntensity: 0.2 });
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(Math.random() * 20 - 10, 4 + Math.random() * 6, Math.random() * 20 - 10);
-  scene.add(m); floating.push({mesh: m, speed: 0.3 + Math.random() * 0.7, radius: 2 + Math.random() * 8, angle: Math.random() * Math.PI * 2});
-}
+// Tetrahedrons (1)
+const tetraGeo = new THREE.TetrahedronGeometry(2);
+const tetraMat = new THREE.MeshStandardMaterial({ color: 0xff6347 });
+addPrimitive(tetraGeo, tetraMat, 0, 3, 0);
 
-// Custom model (Requirement 6)
+console.log(`Total primitives: ${primitiveCount}`);
+
+// ============================================
+// 3. ADD A CUSTOM 3D MODEL
+// ============================================
 const loader = new GLTFLoader();
-let customModel = null;
+let modelLoaded = false;
+
 loader.load(
-  '/models/model.glb',
-  (g) => {
-    customModel = g.scene;
-    customModel.position.set(-8, 0, -6);
-    customModel.scale.setScalar(2.2);
-    customModel.traverse((c) => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
-    scene.add(customModel);
+  './models/model.glb',
+  (gltf) => {
+    const model = gltf.scene;
+    model.position.set(-15, 0, -15);
+    model.scale.setScalar(2);
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    scene.add(model);
+    modelLoaded = true;
+    console.log('Custom model loaded');
   },
   undefined,
-  (err) => {
-    console.warn('Model failed to load; adding fallback object.', err);
-    // Fallback model: a simple spaceship made of boxes
-    const ship = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.ConeGeometry(1.2, 4, 12), new THREE.MeshStandardMaterial({ color: 0x8844cc }));
-    body.rotation.x = Math.PI / 2; ship.add(body);
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 4), new THREE.MeshStandardMaterial({ color: 0x223344 })); wingL.position.set(-1.3, 0, 0); ship.add(wingL);
-    const wingR = wingL.clone(); wingR.position.x = 1.3; ship.add(wingR);
-    ship.position.set(-8, 2, -6); ship.scale.setScalar(1.8);
-    ship.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
-    scene.add(ship);
+  (error) => {
+    console.warn('Model not found, using fallback:', error);
+    // Fallback: simple cone spaceship
+    const shipGroup = new THREE.Group();
+    const bodyGeo = new THREE.ConeGeometry(1.5, 4, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e90ff });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.rotation.z = Math.PI / 2;
+    body.castShadow = true;
+    shipGroup.add(body);
+    
+    const wingGeo = new THREE.BoxGeometry(0.3, 2, 3);
+    const wingMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const wing1 = new THREE.Mesh(wingGeo, wingMat);
+    wing1.position.y = 1;
+    wing1.castShadow = true;
+    shipGroup.add(wing1);
+    
+    const wing2 = wing1.clone();
+    wing2.position.y = -1;
+    shipGroup.add(wing2);
+    
+    shipGroup.position.set(-15, 2, -15);
+    shipGroup.scale.setScalar(1.8);
+    scene.add(shipGroup);
   }
 );
 
-// Wow Point: animated glowing alien energy core (Requirement 11 + Wow Point specifics)
+// ============================================
+// 4. ADD CONTROLS TO CAMERA (OrbitControls)
+// ============================================
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 5, 0);
+controls.autoRotate = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.update();
+
+// ============================================
+// 8. WOW POINT - Animated glowing energy core
+// ============================================
 const coreGroup = new THREE.Group();
-coreGroup.position.set(6, 6, 6);
+coreGroup.position.set(10, 10, 10);
 scene.add(coreGroup);
 
-// glowing sphere
-const glowMat = new THREE.MeshStandardMaterial({ color: 0x66ffff, emissive: 0x66eeff, emissiveIntensity: 3, metalness: 0.1, roughness: 0.2 });
-const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 24), glowMat);
-coreSphere.castShadow = true; coreSphere.receiveShadow = true; coreGroup.add(coreSphere);
+const coreSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(2, 32, 32),
+  new THREE.MeshStandardMaterial({
+    color: 0x00ffff,
+    emissive: 0x00ffff,
+    emissiveIntensity: 2,
+    metalness: 0.5,
+    roughness: 0.2
+  })
+);
+coreSphere.castShadow = true;
+coreGroup.add(coreSphere);
 
-// point light inside the core (Requirement: PointLight inside core)
-const coreLight = new THREE.PointLight(0x66ffdd, 2.2, 30, 2);
-coreLight.castShadow = true; coreGroup.add(coreLight);
+const coreLight = new THREE.PointLight(0x00ffff, 3, 60);
+coreLight.castShadow = true;
+coreGroup.add(coreLight);
 
-// rotating torus rings around the core
-const coreRings = new THREE.Group(); coreGroup.add(coreRings);
-for (let i = 0; i < 3; i++) {
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.5 + i * 0.6, 0.12, 8, 64), new THREE.MeshStandardMaterial({ emissive: 0x55eeff, emissiveIntensity: 1.6, color: 0x0033aa }));
-  ring.rotation.x = Math.random() * Math.PI;
-  coreRings.add(ring);
-}
-
-// orbiting small spheres
+// Orbiting particles around core
+const orbiterCount = 8;
 const orbiters = [];
-for (let i = 0; i < 6; i++) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), new THREE.MeshStandardMaterial({ emissive: 0xffee88, color: 0xffcc66 }));
-  const a = Math.random() * Math.PI * 2; const r = 2.6 + Math.random() * 2.4; const s = 0.8 + Math.random() * 1.4;
-  m.position.set(Math.cos(a) * r, (Math.random() - 0.3) * 0.6, Math.sin(a) * r);
-  coreGroup.add(m); orbiters.push({ mesh: m, angle: a, radius: r, speed: s });
+for (let i = 0; i < orbiterCount; i++) {
+  const angle = (i / orbiterCount) * Math.PI * 2;
+  const orbGeo = new THREE.SphereGeometry(0.3, 16, 16);
+  const orbMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color().setHSL(0.55, 1, 0.6),
+    emissive: 0xffff00,
+    emissiveIntensity: 1
+  });
+  const orb = new THREE.Mesh(orbGeo, orbMat);
+  orb.position.set(Math.cos(angle) * 4, Math.sin(angle) * 2, Math.sin(angle) * 4);
+  coreGroup.add(orb);
+  orbiters.push({
+    mesh: orb,
+    angle: angle,
+    radius: 4,
+    speed: 0.02 + Math.random() * 0.01
+  });
 }
 
-// animation loop
-const clock = new THREE.Clock();
+// ============================================
+// ANIMATION LOOP
+// ============================================
 function animate() {
   requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-
-  // Rotate one torus continuously (Requirement: rotate at least one object)
-  torusGroup.rotation.y = t * 0.6;
-
-  // Bob floating objects and make them orbit (Requirement: bob up/down or move in circle)
-  floating.forEach((f, idx) => {
-    const m = f.mesh;
-    f.angle += 0.01 * f.speed;
-    m.position.x = Math.cos(f.angle) * f.radius;
-    m.position.z = Math.sin(f.angle) * f.radius;
-    m.position.y = 4 + Math.sin(t * f.speed + idx) * 1.2;
-    m.rotation.y += 0.01 * (1 + idx * 0.2);
+  
+  const time = Date.now() * 0.001;
+  
+  // Rotate first torus group
+  primitivesGroup.rotation.y += 0.003;
+  
+  // Animate core
+  coreSphere.rotation.x += 0.005;
+  coreSphere.rotation.y += 0.003;
+  coreLight.intensity = 2 + Math.sin(time * 2) * 0.8;
+  
+  // Animate orbiters
+  orbiters.forEach((orb, idx) => {
+    orb.angle += orb.speed;
+    orb.mesh.position.x = Math.cos(orb.angle) * orb.radius;
+    orb.mesh.position.y = Math.sin(orb.angle * 0.5) * 2;
+    orb.mesh.position.z = Math.sin(orb.angle) * orb.radius;
+    orb.mesh.rotation.x += 0.02;
+    orb.mesh.rotation.y += 0.03;
   });
-
-  // Animate core rings and light intensity/color (Wow Point animations)
-  coreRings.children.forEach((r, i) => { r.rotation.y = t * (0.6 + i * 0.3); r.rotation.x = t * (0.2 + i * 0.1); });
-  coreLight.intensity = 1.6 + Math.sin(t * 3) * 0.6;
-  coreLight.color.setHSL(0.55 + Math.sin(t * 2) * 0.02, 0.8, 0.6 + Math.sin(t * 4) * 0.02);
-
-  // Orbiters
-  orbiters.forEach(o => { o.angle += 0.02 * o.speed; o.mesh.position.x = Math.cos(o.angle) * o.radius; o.mesh.position.z = Math.sin(o.angle) * o.radius; });
-
-  // keep controls updating
+  
   controls.update();
   renderer.render(scene, camera);
 }
+
+// ============================================
+// HANDLE WINDOW RESIZE
+// ============================================
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Start animation
 animate();
 
-// Initial renderer size (already set in resize handler)
-onWindowResize();
-
-// Expose scene info for debugging
-window.__APP = { scene, camera, renderer };
-
-// End of main
+// Expose for debugging
+window.scene = scene;
+window.camera = camera;
