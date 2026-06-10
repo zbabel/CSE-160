@@ -128,6 +128,100 @@ const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
 scene.add(skybox);
 
 // ============================================
+// 6B. ADD 3D STARS (glowing star shapes)
+// ============================================
+const starsGroup = new THREE.Group();
+scene.add(starsGroup);
+
+function createStar(size = 1) {
+  // Create a star shape using a combination of pyramids
+  const starGroup = new THREE.Group();
+  
+  // Central octahedron core
+  const coreGeo = new THREE.OctahedronGeometry(size * 0.3);
+  const coreMat = new THREE.MeshStandardMaterial({
+    color: 0xffff99,
+    emissive: 0xffff66,
+    emissiveIntensity: 1.5
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  starGroup.add(core);
+  
+  // 4 tetrahedron points radiating outward
+  for (let i = 0; i < 4; i++) {
+    const pointGeo = new THREE.TetrahedronGeometry(size * 0.25);
+    const pointMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color().setHSL(0.15 + Math.random() * 0.05, 0.9, 0.7),
+      emissive: 0xffff44,
+      emissiveIntensity: 1
+    });
+    const point = new THREE.Mesh(pointGeo, pointMat);
+    
+    // Position points in different directions
+    const angle = (i / 4) * Math.PI * 2;
+    point.position.x = Math.cos(angle) * size * 0.8;
+    point.position.y = Math.sin(angle) * size * 0.8;
+    point.position.z = Math.cos(angle * 0.7) * size * 0.8;
+    point.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+    
+    starGroup.add(point);
+  }
+  
+  // 4 more small spikes
+  for (let i = 0; i < 4; i++) {
+    const spikeGeo = new THREE.ConeGeometry(size * 0.15, size * 0.5, 4);
+    const spikeMat = new THREE.MeshStandardMaterial({
+      color: 0xffff99,
+      emissive: 0xffff99,
+      emissiveIntensity: 0.8
+    });
+    const spike = new THREE.Mesh(spikeGeo, spikeMat);
+    
+    const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    spike.position.x = Math.cos(angle) * size * 1.1;
+    spike.position.z = Math.sin(angle) * size * 1.1;
+    spike.rotation.y = angle;
+    
+    starGroup.add(spike);
+  }
+  
+  return starGroup;
+}
+
+// Add 12 glowing 3D stars scattered around the island
+const stars = [];
+for (let i = 0; i < 12; i++) {
+  const star = createStar(0.8 + Math.random() * 0.6);
+  
+  // Random position in sky
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.random() * Math.PI * 0.6; // Keep in upper hemisphere
+  const radius = 60 + Math.random() * 40;
+  
+  star.position.x = Math.sin(phi) * Math.cos(theta) * radius;
+  star.position.y = Math.cos(phi) * radius + 50;
+  star.position.z = Math.sin(phi) * Math.sin(theta) * radius;
+  
+  star.rotation.x = Math.random() * Math.PI;
+  star.rotation.y = Math.random() * Math.PI;
+  star.rotation.z = Math.random() * Math.PI;
+  
+  starsGroup.add(star);
+  stars.push({
+    mesh: star,
+    rotationSpeed: {
+      x: (Math.random() - 0.5) * 0.01,
+      y: (Math.random() - 0.5) * 0.01,
+      z: (Math.random() - 0.5) * 0.01
+    },
+    twinkleSpeed: 0.5 + Math.random() * 1.5,
+    twinkleOffset: Math.random() * Math.PI * 2
+  });
+}
+
+console.log(`Added ${stars.length} 3D stars to scene`);
+
+// ============================================
 // 7. ADD MORE 3D OBJECTS (20+)
 // ============================================
 
@@ -390,6 +484,17 @@ function animate() {
     orb.mesh.position.z = Math.sin(orb.angle) * orb.radius;
     orb.mesh.rotation.x += 0.02;
     orb.mesh.rotation.y += 0.03;
+  });
+  
+  // Animate 3D stars - rotate and twinkle
+  stars.forEach((star, idx) => {
+    star.mesh.rotation.x += star.rotationSpeed.x;
+    star.mesh.rotation.y += star.rotationSpeed.y;
+    star.mesh.rotation.z += star.rotationSpeed.z;
+    
+    // Twinkle effect - scale up and down
+    const twinkle = 0.5 + Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.5;
+    star.mesh.scale.setScalar(twinkle);
   });
   
   controls.update();
