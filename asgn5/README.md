@@ -2,44 +2,79 @@
 
 This project is a minimal Vite + Three.js scene for the "Alien Island Base" assignment.
 
-Wow Point: animated glowing alien energy core with moving lights.
+**Wow Point:** animated glowing alien energy core with moving lights.
 
-Place a GLB model at `public/models/model.glb`. If you don't have one, download a free `.glb` from Poly Pizza or Free3D and put it there.
+## Quick Start
 
-How to run
-1. Install dependencies:
-
+### Run locally
 ```powershell
 npm install
-```
-
-2. Start dev server:
-
-```powershell
 npm run dev
 ```
+Opens at `http://localhost:5173`
 
-Open the URL printed by Vite (usually `http://localhost:5173`).
+### Deploy to GitHub Pages
+```powershell
+npm run build
+```
 
-Model source
-- Put your `.glb` at `public/models/model.glb`.
-- If the model fails to load the app adds a simple fallback spaceship created from primitives.
+Then set up GitHub Pages to deploy from the `dist/` folder (see instructions below).
 
-Assignment checklist (all implemented):
+## GitHub Pages Setup
 
-- **Create a complete 3D scene/world using Three.js** — scene, camera, renderer, island, objects present.
-- **Include at least 20 primary 3D shapes** — boxes(6)+spheres(5)+cylinders(4)+cones(4)+torus(3) = 22 primitives (see `src/main.js` comments).
-- **Use at least 3 different primitive shape types** — BoxGeometry, SphereGeometry, CylinderGeometry, ConeGeometry, TorusGeometry used.
-- **At least one primitive shape is textured** — several primitives use CanvasTexture (see `makePatternTexture`).
-- **At least one primitive shape is animated** — torusGroup rotates; floating objects bob/orbit.
-- **Include at least one textured custom 3D model** — load `/models/model.glb` via GLTFLoader; fallback provided.
-- **Include at least 3 different light source types** — AmbientLight, HemisphereLight, DirectionalLight, PointLight, SpotLight.
-- **Include a textured skybox** — procedural skybox created via six CanvasTextures.
-- **Use a PerspectiveCamera** — implemented.
-- **Add mouse navigation controls using OrbitControls** — implemented.
-- **Add an extra “Wow Point” feature** — animated glowing alien energy core with animated rings, internal PointLight, and orbiting spheres.
-- **Include a visible note describing the Wow Point** — overlay in `index.html` and `README.md`.
+After running `npm run build`, choose one of these options:
 
-Notes:
-- The project uses Vite. If you prefer another dev server, adapt `package.json` accordingly.
-- The GLTF model is not included in the repo. Place your downloaded `model.glb` into `public/models/`.
+**Option 1: Automatic with GitHub Actions (Recommended)**
+
+Create `.github/workflows/deploy.yml`:
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm install && npm run build
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+```
+
+**Option 2: Manual**
+1. Go to repo **Settings > Pages**
+2. Set Source to "Deploy from a branch"
+3. Select `gh-pages` branch (you'll need to push `dist/` to this branch)
+
+Your site will be at: `https://yourusername.github.io/asgn5/`
+
+## Model Setup
+
+Place your custom `.glb` model at:
+```
+public/models/model.glb
+```
+
+If missing, a fallback spaceship is generated automatically.
+
+Download free models from:
+- [Poly Pizza](https://poly.pizza/)
+- [Free3D](https://free3d.com/)
+
+## Features Implemented
+
+✅ 22+ primitives (boxes, spheres, cylinders, cones, torus)  
+✅ Textured primitives with CanvasTexture  
+✅ Animated torus rings & floating objects  
+✅ 5 light types (Ambient, Hemisphere, Directional, Point, Spot)  
+✅ Procedural skybox  
+✅ GLTFLoader for custom 3D model  
+✅ OrbitControls for mouse navigation  
+✅ Shadows & responsive resizing  
+✅ Wow Point: glowing alien energy core with animated rings
