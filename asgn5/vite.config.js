@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/asgn5/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/CSE-160/asgn5/' : '/',
   server: {
     port: 5173,
     open: true
