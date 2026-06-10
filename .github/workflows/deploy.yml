@@ -12,7 +12,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: cd asgn5 && npm install && npm run build
+      - name: Install and build
+        working-directory: ./asgn5
+        run: |
+          npm install
+          npm run build
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
