@@ -20,6 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -30,18 +33,24 @@ jobs:
         run: npm ci
         working-directory: asgn5
 
-      - name: Build
+      - name: Build asgn5
         run: npm run build
         working-directory: asgn5
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p pages/asgn5
+          cp -r asgn5/dist/* pages/asgn5/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: asgn5/dist
+          path: pages
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
